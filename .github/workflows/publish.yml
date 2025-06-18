@@ -9,8 +9,8 @@ jobs:
   build:
     uses: srnyx/tools/.github/workflows/publish.yml@main
     with:
-      modrinth: modrinthId
-      curseforge: curseforgeId
+      modrinth: PMWx2eoO
+      curseforge: 1289091
     secrets: inherit
     permissions:
       contents: write

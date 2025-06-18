@@ -7,3 +7,14 @@ website: https://srnyx.com
 main: ${mainPackage}.${name}
 version: ${version}
 api-version: 1.13
+
+commands:
+  commandloggerreload:
+    description: Reloads the CommandLogger configuration
+    aliases:
+      - clreload
+    permission: commandlogger.reload
+
+permissions:
+  commandlogger.reload:
+    description: Allows usage of the /commandloggerreload command

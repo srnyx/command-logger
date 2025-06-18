@@ -1,0 +1,92 @@
+# Toggle all logging features (basically the entire plugin)
+enabled: true
+
+# Configurable formats for some variables, such as date and time
+variable-formats:
+  # https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html
+  date:
+    file-names: "yyyy-MM-dd"
+    formats: "MM-dd-yyyy"
+  # https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html
+  time:
+    file-names: "HH-mm-ss"
+    formats: "HH:mm:ss"
+
+# Combined player and console logging
+combined:
+  enabled: true
+  file: "all.log"
+  # Available placeholders:
+  # {date} - Current date as variable-formats.date.formats
+  # {time} - Current time as variable-formats.time.formats
+  # {player} - The player's name (*CONSOLE* for console commands)
+  # {uuid} - Player's UUID (empty for console commands)
+  # {ip} - Player's IP address (empty for console commands or if not available)
+  # {command} - The command executed
+  format: "[{date} {time}] [{player}] {command}"
+
+# Commands executed by players
+players:
+  enabled: true
+
+  # One big continuous file for all player-ran commands
+  combined:
+    enabled: true
+    file: "players.log"
+    required-permission: ""
+    # Available placeholders:
+    # {date} - Current date as variable-formats.date.formats
+    # {time} - Current time as variable-formats.time.formats
+    # {player} - The player's name
+    # {uuid} - Player's UUID
+    # {ip} - Player's IP address (empty if not available)
+    # {command} - The command executed
+    format: "[{date} {time}] [{player}] {command}"
+
+  # Split player commands into separate files based on different parameters
+  # Available placeholders:
+  # {player} - Player's name
+  # {uuid} - Player's UUID
+  # {ip} - Player's IP address (empty if not available)
+  # {date} - Current date as variable-formats.date
+  # {time} - Current time as variable-formats.time
+  # {command} - The command executed (format only)
+  splits:
+    - enabled: true
+      file-name: "players/{uuid}.log"
+      format: "[{date} {time}] {command}"
+    - enabled: false
+      file-name: "players/{uuid}/{date}.log"
+      format: "[{time}] {command}"
+    - enabled: false
+      file-name: "players/builders.log"
+      required-permission: "group.builder"
+      format: "[{date} {time}] [{player}] {command}"
+    - enabled: false
+      file-name: "players/mods.log"
+      required-permission: "group.mod"
+      format: "[{date} {time}] [{player}] {command}"
+
+# Commands executed by the console
+console:
+  enabled: true
+
+  # One big continuous file for all console commands
+  combined:
+    enabled: true
+    file: "console.log"
+    # Available placeholders:
+    # {date} - Current date as variable-formats.date.formats
+    # {time} - Current time as variable-formats.time.formats
+    # {command} - The command executed
+    format: "[{date} {time}] {command}"
+
+  # Split console commands into separate files based on different parameters
+  # Available placeholders:
+  # {date} - Current date as variable-formats.date
+  # {time} - Current time as variable-formats.time
+  # {command} - The command executed (format only)
+  splits:
+    - enabled: true
+      file-name: "console/{date}.log"
+      format: "[{time}] {command}"

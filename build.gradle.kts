@@ -9,4 +9,4 @@ plugins {
 }
 
 paper("1.8.8")
-setupAnnoyingAPI("5.1.5", "com.srnyx", "0.0.1", "DESCRIPTION")
+setupAnnoyingAPI("b717656b2d", "com.srnyx", "1.0.0", "Log commands executed by players and console to one file or multiple files")
