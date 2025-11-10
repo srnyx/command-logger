@@ -4,6 +4,8 @@ import com.srnyx.commandlogger.config.ConfigYml;
 import com.srnyx.commandlogger.listeners.ConsoleCommandListener;
 import com.srnyx.commandlogger.listeners.PlayerCommandListener;
 
+import me.clip.placeholderapi.PlaceholderAPI;
+
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -58,6 +60,10 @@ public class CommandLogger extends AnnoyingPlugin {
 
     @NotNull
     public String processFormatVariables(@NotNull String string, @NotNull CommandSender sender, @NotNull String command) {
+        // PlaceholderAPI (run first so placeholders in raw command aren't replaced)
+        if (papiInstalled) string = PlaceholderAPI.setPlaceholders(sender instanceof Player ? (Player) sender : null, string);
+
+        // Get plugin placeholders
         String playerName = sender.getName();
         String uuid = "";
         String ip = "";
@@ -70,6 +76,7 @@ public class CommandLogger extends AnnoyingPlugin {
             playerName = "*" + playerName + "*";
         }
 
+        // Replace plugin placeholders
         final Date now = new Date();
         return string
                 .replace("{date}", config.variableFormats.date.formats.format(now))

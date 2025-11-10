@@ -1,5 +1,7 @@
 import xyz.srnyx.gradlegalaxy.data.config.DependencyConfig
 import xyz.srnyx.gradlegalaxy.data.config.JavaSetupConfig
+import xyz.srnyx.gradlegalaxy.enums.Repository
+import xyz.srnyx.gradlegalaxy.enums.repository
 import xyz.srnyx.gradlegalaxy.utility.paper
 import xyz.srnyx.gradlegalaxy.utility.setupAnnoyingAPI
 
@@ -17,3 +19,6 @@ setupAnnoyingAPI(
         version = "1.1.0",
         description = "Log commands executed by players and console to one file or multiple files"),
     annoyingAPIConfig = DependencyConfig(version = "e9ad7a91ef"))
+
+repository(Repository.PLACEHOLDER_API)
+dependencies.compileOnly("me.clip", "placeholderapi", "2.11.6")
