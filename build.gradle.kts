@@ -1,12 +1,19 @@
+import xyz.srnyx.gradlegalaxy.data.config.DependencyConfig
+import xyz.srnyx.gradlegalaxy.data.config.JavaSetupConfig
 import xyz.srnyx.gradlegalaxy.utility.paper
 import xyz.srnyx.gradlegalaxy.utility.setupAnnoyingAPI
 
 
 plugins {
     java
-    id("xyz.srnyx.gradle-galaxy") version "1.3.5"
-    id("com.gradleup.shadow") version "8.3.8"
+    id("xyz.srnyx.gradle-galaxy") version "2.0.2"
+    id("com.gradleup.shadow") version "8.3.9"
 }
 
-paper("1.8.8")
-setupAnnoyingAPI("1c2e7eef30", "com.srnyx", "1.0.0", "Log commands executed by players and console to one file or multiple files")
+paper(config = DependencyConfig(version = "1.8.8"))
+setupAnnoyingAPI(
+    javaSetupConfig = JavaSetupConfig(
+        group = "com.srnyx",
+        version = "1.1.0",
+        description = "Log commands executed by players and console to one file or multiple files"),
+    annoyingAPIConfig = DependencyConfig(version = "e9ad7a91ef"))
