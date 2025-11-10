@@ -37,9 +37,20 @@ public class PlayerCommandListener extends AnnoyingListener {
             unregister();
             return;
         }
+        final String command = event.getMessage().substring(1);
+
+        // Check all filter
+        if (plugin.config.filter != null && plugin.config.filter.matcher(command).matches()) return;
+
+        // Check players filter
+        if (plugin.config.players.filter != null && plugin.config.players.filter.matcher(command).matches()) return;
 
         // Combined
         if (plugin.config.combined.enabled) {
+            // Check filter
+            if (plugin.config.combined.filter != null && plugin.config.combined.filter.matcher(command).matches()) return;
+
+            // Add to log
             try {
                 Files.createDirectories(plugin.config.combined.file.getParent());
                 Files.write(
@@ -54,7 +65,14 @@ public class PlayerCommandListener extends AnnoyingListener {
         final Player player = event.getPlayer();
 
         // Players combined
-        if (plugin.config.players.combined.enabled && plugin.config.players.combined.hasRequiredPermission(player)) {
+        if (plugin.config.players.combined.enabled) {
+            // Check filter
+            if (plugin.config.players.combined.filter != null && plugin.config.players.combined.filter.matcher(command).matches()) return;
+
+            // Check permission
+            if (!plugin.config.players.combined.hasRequiredPermission(player)) return;
+
+            // Add to log
             try {
                 Files.createDirectories(plugin.config.players.combined.file.getParent());
                 Files.write(
@@ -72,18 +90,27 @@ public class PlayerCommandListener extends AnnoyingListener {
         final String uuid = player.getUniqueId().toString();
         final InetSocketAddress address = player.getAddress();
         final String ip = address != null ? address.getAddress().getHostAddress() : "";
-        for (final Split.PlayerSplit split : plugin.config.players.splits) if (split.hasRequiredPermission(player)) try {
-            final Path file = plugin.logsFolder.resolve(plugin.processFileNameVariables(split.fileName)
-                    .replace("{player}", name)
-                    .replace("{uuid}", uuid)
-                    .replace("{ip}", ip));
-            Files.createDirectories(file.getParent());
-            Files.write(
-                    file,
-                    split.format(event).getBytes(),
-                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-        } catch (final Exception e) {
-            AnnoyingPlugin.log(Level.WARNING, "&cFailed to write to player command log file for " + name + "!", e);
+        for (final Split.PlayerSplit split : plugin.config.players.splits) {
+            // Check filter
+            if (split.filter != null && split.filter.matcher(command).matches()) continue;
+
+            // Check permission
+            if (!split.hasRequiredPermission(player)) continue;
+
+            // Add to log
+            try {
+                final Path file = plugin.logsFolder.resolve(plugin.processFileNameVariables(split.fileName)
+                        .replace("{player}", name)
+                        .replace("{uuid}", uuid)
+                        .replace("{ip}", ip));
+                Files.createDirectories(file.getParent());
+                Files.write(
+                        file,
+                        split.format(event).getBytes(),
+                        StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            } catch (final Exception e) {
+                AnnoyingPlugin.log(Level.WARNING, "&cFailed to write to player command log file for " + name + "!", e);
+            }
         }
     }
 }

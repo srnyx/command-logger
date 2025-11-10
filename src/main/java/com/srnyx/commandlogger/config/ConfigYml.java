@@ -1,8 +1,6 @@
 package com.srnyx.commandlogger.config;
 
 import com.srnyx.commandlogger.CommandLogger;
-import com.srnyx.commandlogger.listeners.ConsoleCommandListener;
-import com.srnyx.commandlogger.listeners.PlayerCommandListener;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
@@ -11,6 +9,7 @@ import org.bukkit.event.server.ServerCommandEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import xyz.srnyx.annoyingapi.AnnoyingPlugin;
 import xyz.srnyx.annoyingapi.file.AnnoyingResource;
 
 import java.nio.file.Path;
@@ -18,6 +17,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.regex.Pattern;
 
 
 public class ConfigYml {
@@ -25,6 +26,7 @@ public class ConfigYml {
     @NotNull private final AnnoyingResource config;
 
     public final boolean enabled;
+    @Nullable public final Pattern filter;
     @NotNull public final VariableFormats variableFormats;
     @NotNull public final Combined combined;
     @NotNull public final Players players;
@@ -35,10 +37,16 @@ public class ConfigYml {
         config = new AnnoyingResource(plugin, "config.yml");
 
         enabled = config.getBoolean("enabled", true);
+        filter = getFilter(config.getString("filter"));
         variableFormats = new VariableFormats();
         combined = new Combined();
         players = new Players();
         console = new Console();
+    }
+
+    @Nullable
+    public static Pattern getFilter(@Nullable String filter) {
+        return filter != null && !filter.trim().isEmpty() ? Pattern.compile(filter) : null;
     }
 
     public class VariableFormats {
@@ -59,6 +67,7 @@ public class ConfigYml {
     public class Combined {
         public final boolean enabled = config.getBoolean("combined.enabled", true);
         @NotNull public final Path file = plugin.logsFolder.resolve(config.getString("combined.file", "commands.log"));
+        @Nullable public final Pattern filter = getFilter(config.getString("combined.filter"));
         @NotNull public final String format = config.getString("combined.format", "[{date} {time}] [{player}] {command}");
 
         @NotNull
@@ -74,6 +83,7 @@ public class ConfigYml {
 
     public class Players {
         public final boolean enabled = config.getBoolean("players.enabled", true);
+        @Nullable public final Pattern filter = getFilter(config.getString("players.filter"));
         @NotNull public final Combined combined = new Combined();
         @NotNull public final List<Split.PlayerSplit> splits = new ArrayList<>();
 
@@ -92,6 +102,7 @@ public class ConfigYml {
             public final boolean enabled = config.getBoolean("players.combined.enabled", true);
             @NotNull public final Path file = plugin.logsFolder.resolve(config.getString("players.combined.file", "players.log"));
             @Nullable public final String requiredPermission;
+            @Nullable public final Pattern filter = getFilter(config.getString("players.combined.filter"));
             @NotNull public final String format = config.getString("players.combined.format", "[{date} {time}] [{player}] {command}");
 
             public Combined() {
@@ -112,6 +123,7 @@ public class ConfigYml {
 
     public class Console {
         public final boolean enabled = config.getBoolean("console.enabled", true);
+        @Nullable public final Pattern filter = getFilter(config.getString("console.filter"));
         @NotNull public final Combined combined = new Combined();
         @NotNull public final List<Split> splits = new ArrayList<>();
 
@@ -129,6 +141,7 @@ public class ConfigYml {
         public class Combined {
             public final boolean enabled = config.getBoolean("console.combined.enabled", true);
             @NotNull public final Path file = plugin.logsFolder.resolve(config.getString("console.combined.file", "console.log"));
+            @Nullable public final Pattern filter = getFilter(config.getString("console.combined.filter"));
             @NotNull public final String format = config.getString("console.combined.format", "[{date} {time}] {command}");
 
             @NotNull

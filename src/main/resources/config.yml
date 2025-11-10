@@ -1,6 +1,12 @@
 # Toggle all logging features (basically the entire plugin)
 enabled: true
 
+# This filter to applies to ALL command logging (combined, players, console, and all splits)
+# All filters use regex (see https://regex101.com). If a command (excluding the /) matches the filter, it will NOT be logged.
+# Example: "me.*" would filter out all /me commands
+# Filters can be applied to both combined logs and splits
+filter: ""
+
 # Configurable formats for some variables, such as date and time
 variable-formats:
   # https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html
@@ -16,6 +22,7 @@ variable-formats:
 combined:
   enabled: true
   file: "all.log"
+  filter: ""
   # Available placeholders:
   # {date} - Current date as variable-formats.date.formats
   # {time} - Current time as variable-formats.time.formats
@@ -29,11 +36,15 @@ combined:
 players:
   enabled: true
 
+  # This filter applies to all player-ran commands (combined and splits)
+  filter: ""
+
   # One big continuous file for all player-ran commands
   combined:
     enabled: true
     file: "players.log"
     required-permission: ""
+    filter: ""
     # Available placeholders:
     # {date} - Current date as variable-formats.date.formats
     # {time} - Current time as variable-formats.time.formats
@@ -57,6 +68,7 @@ players:
       format: "[{date} {time}] {command}"
     - enabled: false
       file-name: "players/{uuid}/{date}.log"
+      filter: "login.*"
       format: "[{time}] {command}"
     - enabled: false
       file-name: "players/builders.log"
@@ -71,10 +83,14 @@ players:
 console:
   enabled: true
 
+  # This filter applies to all console commands (combined and splits)
+  filter: ""
+
   # One big continuous file for all console commands
   combined:
     enabled: true
     file: "console.log"
+    filter: ""
     # Available placeholders:
     # {date} - Current date as variable-formats.date.formats
     # {time} - Current time as variable-formats.time.formats
@@ -89,4 +105,5 @@ console:
   splits:
     - enabled: true
       file-name: "console/{date}.log"
+      filter: ""
       format: "[{time}] {command}"

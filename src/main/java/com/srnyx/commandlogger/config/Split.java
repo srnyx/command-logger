@@ -2,6 +2,7 @@ package com.srnyx.commandlogger.config;
 
 import com.srnyx.commandlogger.CommandLogger;
 
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.server.ServerCommandEvent;
@@ -10,17 +11,20 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.regex.Pattern;
 
 
 public class Split {
     @NotNull public final CommandLogger plugin;
     @NotNull public final String fileName;
+    @Nullable public final Pattern filter;
     @NotNull public final String format;
 
     public Split(@NotNull CommandLogger plugin, @NotNull Map<?, ?> map, @NotNull String defaultFileName, @NotNull String defaultFormat) {
         this.plugin = plugin;
         final String fileName = (String) map.get("fileName");
         this.fileName = fileName != null ? fileName : defaultFileName;
+        filter = ConfigYml.getFilter((String) map.get("filter"));
         final String format = (String) map.get("format");
         this.format = format != null && !format.trim().isEmpty() ? format : defaultFormat;
     }
