@@ -79,8 +79,12 @@ public class ConfigYml {
 
         public Players() {
             for (final Map<?, ?> map : config.getMapList("players.splits")) {
-                final Boolean enabled = (Boolean) map.get("enabled");
-                if (enabled != null && enabled) splits.add(new Split.PlayerSplit(plugin, map, "players/{uuid}.log", "[{date} {time}] {command}"));
+                try {
+                    final Boolean enabled = (Boolean) map.get("enabled");
+                    if (enabled != null && enabled) splits.add(new Split.PlayerSplit(plugin, map, "players/{uuid}.log", "[{date} {time}] {command}"));
+                } catch (final ClassCastException e) {
+                    AnnoyingPlugin.log(Level.WARNING, "&cFailed to load a player command split from config.yml due to invalid options! Skipping it...", e);
+                }
             }
         }
 
@@ -113,8 +117,12 @@ public class ConfigYml {
 
         public Console() {
             for (final Map<?, ?> map : config.getMapList("console.splits")) {
-                final Boolean enabled = (Boolean) map.get("enabled");
-                if (enabled != null && enabled) splits.add(new Split(plugin, map, "console/{date}.log", "[{time}] {command}"));
+                try {
+                    final Boolean enabled = (Boolean) map.get("enabled");
+                    if (enabled != null && enabled) splits.add(new Split(plugin, map, "console/{date}.log", "[{time}] {command}"));
+                } catch (final ClassCastException e) {
+                    AnnoyingPlugin.log(Level.WARNING, "&cFailed to load a console split from config.yml due to invalid options! Skipping it...", e);
+                }
             }
         }
 
