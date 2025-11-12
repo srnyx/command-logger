@@ -75,6 +75,11 @@ public class CommandLogger extends AnnoyingPlugin {
         } else {
             playerName = "*" + playerName + "*";
         }
+        // Get full command, base command, and arguments
+        final String fullCommand = command.substring(1);
+        final String[] split = fullCommand.split(" ", 2);
+        final String baseCommand = split[0];
+        final String arguments = split.length > 1 ? split[1] : "";
 
         // Replace plugin placeholders
         final Date now = new Date();
@@ -84,7 +89,10 @@ public class CommandLogger extends AnnoyingPlugin {
                 .replace("{player}", playerName)
                 .replace("{uuid}", uuid)
                 .replace("{ip}", ip)
-                .replace("{command}", command)
+                .replace("{full_command}", fullCommand)
+                .replace("{base_command}", baseCommand)
+                .replace("{arguments}", arguments)
+                .replace("{command}", command) // Legacy/old
                 + "\n";
     }
 

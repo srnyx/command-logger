@@ -29,8 +29,10 @@ combined:
   # {player} - The player's name (*CONSOLE* for console commands)
   # {uuid} - Player's UUID (empty for console commands)
   # {ip} - Player's IP address (empty for console commands or if not available)
-  # {command} - The command executed
-  format: "[{date} {time}] [{player}] {command}"
+  # {full_command} - The command executed excluding the '/'
+  # {base_command} - The command executed excluding the '/' and any arguments
+  # {arguments} - The arguments provided to the command, empty if none
+  format: "[{date} {time}] [{player}] /{full_command}"
 
 # Commands executed by players
 players:
@@ -51,8 +53,10 @@ players:
     # {player} - The player's name
     # {uuid} - Player's UUID
     # {ip} - Player's IP address (empty if not available)
-    # {command} - The command executed
-    format: "[{date} {time}] [{player}] {command}"
+    # {full_command} - The command executed excluding the '/'
+    # {base_command} - The command executed excluding the '/' and any arguments
+    # {arguments} - The arguments provided to the command, empty if none
+    format: "[{date} {time}] [{player}] /{full_command}"
 
   # Split player commands into separate files based on different parameters
   # Available placeholders:
@@ -61,23 +65,25 @@ players:
   # {ip} - Player's IP address (empty if not available)
   # {date} - Current date as variable-formats.date
   # {time} - Current time as variable-formats.time
-  # {command} - The command executed (format only)
+  # {full_command} - The command executed excluding the '/' (format only)
+  # {base_command} - The command executed excluding the '/' and any arguments (format only)
+  # {arguments} - The arguments provided to the command, empty if none (format only)
   splits:
     - enabled: true
       file-name: "players/{uuid}.log"
-      format: "[{date} {time}] {command}"
+      format: "[{date} {time}] /{full_command}"
     - enabled: false
       file-name: "players/{uuid}/{date}.log"
       filter: "login.*"
-      format: "[{time}] {command}"
+      format: "[{time}] /{full_command}"
     - enabled: false
       file-name: "players/builders.log"
       required-permission: "group.builder"
-      format: "[{date} {time}] [{player}] {command}"
+      format: "[{date} {time}] [{player}] /{full_command}"
     - enabled: false
       file-name: "players/mods.log"
       required-permission: "group.mod"
-      format: "[{date} {time}] [{player}] {command}"
+      format: "[{date} {time}] [{player}] /{full_command}"
 
 # Commands executed by the console
 console:
@@ -94,16 +100,20 @@ console:
     # Available placeholders:
     # {date} - Current date as variable-formats.date.formats
     # {time} - Current time as variable-formats.time.formats
-    # {command} - The command executed
-    format: "[{date} {time}] {command}"
+    # {full_command} - The command executed excluding the '/'
+    # {base_command} - The command executed excluding the '/' and any arguments
+    # {arguments} - The arguments provided to the command, empty if none
+    format: "[{date} {time}] /{full_command}"
 
   # Split console commands into separate files based on different parameters
   # Available placeholders:
   # {date} - Current date as variable-formats.date
   # {time} - Current time as variable-formats.time
-  # {command} - The command executed (format only)
+  # {full_command} - The command executed excluding the '/' (format only)
+  # {base_command} - The command executed excluding the '/' and any arguments (format only)
+  # {arguments} - The arguments provided to the command, empty if none (format only)
   splits:
     - enabled: true
       file-name: "console/{date}.log"
       filter: ""
-      format: "[{time}] {command}"
+      format: "[{time}] /{full_command}"

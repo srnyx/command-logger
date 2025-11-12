@@ -68,7 +68,7 @@ public class ConfigYml {
         public final boolean enabled = config.getBoolean("combined.enabled", true);
         @NotNull public final Path file = plugin.logsFolder.resolve(config.getString("combined.file", "commands.log"));
         @Nullable public final Pattern filter = getFilter(config.getString("combined.filter"));
-        @NotNull public final String format = config.getString("combined.format", "[{date} {time}] [{player}] {command}");
+        @NotNull public final String format = config.getString("combined.format", "[{date} {time}] [{player}] /{full_command}");
 
         @NotNull
         public String format(@NotNull ServerCommandEvent event) {
@@ -91,7 +91,7 @@ public class ConfigYml {
             for (final Map<?, ?> map : config.getMapList("players.splits")) {
                 try {
                     final Boolean enabled = (Boolean) map.get("enabled");
-                    if (enabled != null && enabled) splits.add(new Split.PlayerSplit(plugin, map, "players/{uuid}.log", "[{date} {time}] {command}"));
+                    if (enabled != null && enabled) splits.add(new Split.PlayerSplit(plugin, map, "players/{uuid}.log", "[{date} {time}] /{full_command}"));
                 } catch (final ClassCastException e) {
                     AnnoyingPlugin.log(Level.WARNING, "&cFailed to load a player command split from config.yml due to invalid options! Skipping it...", e);
                 }
@@ -103,7 +103,7 @@ public class ConfigYml {
             @NotNull public final Path file = plugin.logsFolder.resolve(config.getString("players.combined.file", "players.log"));
             @Nullable public final String requiredPermission;
             @Nullable public final Pattern filter = getFilter(config.getString("players.combined.filter"));
-            @NotNull public final String format = config.getString("players.combined.format", "[{date} {time}] [{player}] {command}");
+            @NotNull public final String format = config.getString("players.combined.format", "[{date} {time}] [{player}] /{full_command}");
 
             public Combined() {
                 final String requiredPermission = config.getString("players.combined.required-permission");
@@ -131,7 +131,7 @@ public class ConfigYml {
             for (final Map<?, ?> map : config.getMapList("console.splits")) {
                 try {
                     final Boolean enabled = (Boolean) map.get("enabled");
-                    if (enabled != null && enabled) splits.add(new Split(plugin, map, "console/{date}.log", "[{time}] {command}"));
+                    if (enabled != null && enabled) splits.add(new Split(plugin, map, "console/{date}.log", "[{time}] /{full_command}"));
                 } catch (final ClassCastException e) {
                     AnnoyingPlugin.log(Level.WARNING, "&cFailed to load a console split from config.yml due to invalid options! Skipping it...", e);
                 }
@@ -142,7 +142,7 @@ public class ConfigYml {
             public final boolean enabled = config.getBoolean("console.combined.enabled", true);
             @NotNull public final Path file = plugin.logsFolder.resolve(config.getString("console.combined.file", "console.log"));
             @Nullable public final Pattern filter = getFilter(config.getString("console.combined.filter"));
-            @NotNull public final String format = config.getString("console.combined.format", "[{date} {time}] {command}");
+            @NotNull public final String format = config.getString("console.combined.format", "[{date} {time}] /{full_command}");
 
             @NotNull
             public String format(@NotNull ServerCommandEvent event) {
