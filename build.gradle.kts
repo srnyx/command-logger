@@ -16,7 +16,7 @@ paper(config = DependencyConfig(version = "1.8.8"))
 setupAnnoyingAPI(
     javaSetupConfig = JavaSetupConfig(
         group = "com.srnyx",
-        version = "1.1.0",
+        version = "2.0.0",
         description = "Log commands executed by players and console to one file or multiple files"),
     annoyingAPIConfig = DependencyConfig(version = "e9ad7a91ef"))
 
