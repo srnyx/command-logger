@@ -1,7 +1,8 @@
 package com.srnyx.commandlogger.listeners;
 
 import com.srnyx.commandlogger.CommandLogger;
-import com.srnyx.commandlogger.config.Split;
+import com.srnyx.commandlogger.InfoForVariables;
+import com.srnyx.commandlogger.config.ConfigLogger;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -12,7 +13,6 @@ import org.jetbrains.annotations.NotNull;
 import xyz.srnyx.annoyingapi.AnnoyingListener;
 import xyz.srnyx.annoyingapi.AnnoyingPlugin;
 
-import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -40,73 +40,48 @@ public class PlayerCommandListener extends AnnoyingListener {
         final String command = event.getMessage().substring(1);
 
         // Check all filter
-        if (plugin.config.filter != null && plugin.config.filter.matcher(command).matches()) return;
+        if (plugin.config.filters != null && plugin.config.filters.doesNotPass(command)) return;
 
         // Check players filter
-        if (plugin.config.players.filter != null && plugin.config.players.filter.matcher(command).matches()) return;
+        if (plugin.config.players.filters != null && plugin.config.players.filters.doesNotPass(command)) return;
 
-        // Combined
-        if (plugin.config.combined.enabled) {
+        final InfoForVariables info = new InfoForVariables(event);
+
+        // Combined loggers
+        for (final ConfigLogger logger : plugin.config.loggers) {
             // Check filter
-            if (plugin.config.combined.filter != null && plugin.config.combined.filter.matcher(command).matches()) return;
+            if (logger.filters != null && logger.filters.doesNotPass(command)) return;
 
             // Add to log
             try {
-                Files.createDirectories(plugin.config.combined.file.getParent());
+                final Path file = logger.filePath(info);
+                Files.createDirectories(file.getParent());
                 Files.write(
-                        plugin.config.combined.file,
-                        plugin.config.combined.format(event).getBytes(),
+                        file,
+                        logger.format(info).getBytes(),
                         StandardOpenOption.CREATE, StandardOpenOption.APPEND);
             } catch (final Exception e) {
                 AnnoyingPlugin.log(Level.WARNING, "&cFailed to write to combined command log file for a player command!", e);
             }
         }
 
+        // Player loggers
         final Player player = event.getPlayer();
-
-        // Players combined
-        if (plugin.config.players.combined.enabled) {
-            // Check filter
-            if (plugin.config.players.combined.filter != null && plugin.config.players.combined.filter.matcher(command).matches()) return;
-
-            // Check permission
-            if (!plugin.config.players.combined.hasRequiredPermission(player)) return;
-
-            // Add to log
-            try {
-                Files.createDirectories(plugin.config.players.combined.file.getParent());
-                Files.write(
-                        plugin.config.players.combined.file,
-                        plugin.config.players.combined.format(event).getBytes(),
-                        StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-            } catch (final Exception e) {
-                AnnoyingPlugin.log(Level.WARNING, "&cFailed to write to combined player command log file!", e);
-            }
-        }
-
-        // Splits
-        if (plugin.config.players.splits.isEmpty()) return;
         final String name = player.getName();
-        final String uuid = player.getUniqueId().toString();
-        final InetSocketAddress address = player.getAddress();
-        final String ip = address != null ? address.getAddress().getHostAddress() : "";
-        for (final Split.PlayerSplit split : plugin.config.players.splits) {
+        for (final ConfigLogger.PlayerLogger split : plugin.config.players.loggers) {
             // Check filter
-            if (split.filter != null && split.filter.matcher(command).matches()) continue;
+            if (split.filters != null && split.filters.doesNotPass(command)) continue;
 
             // Check permission
             if (!split.hasRequiredPermission(player)) continue;
 
             // Add to log
             try {
-                final Path file = plugin.logsFolder.resolve(plugin.processFileNameVariables(split.fileName)
-                        .replace("{player}", name)
-                        .replace("{uuid}", uuid)
-                        .replace("{ip}", ip));
+                final Path file = split.filePath(info);
                 Files.createDirectories(file.getParent());
                 Files.write(
                         file,
-                        split.format(event).getBytes(),
+                        split.format(info).getBytes(),
                         StandardOpenOption.CREATE, StandardOpenOption.APPEND);
             } catch (final Exception e) {
                 AnnoyingPlugin.log(Level.WARNING, "&cFailed to write to player command log file for " + name + "!", e);

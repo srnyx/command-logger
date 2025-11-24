@@ -1,11 +1,27 @@
+# Available placeholders for file names and formats:
+#   {date} - Current date as variable-formats.date
+#   {time} - Current time as variable-formats.time
+#   {player} - The player's name (*CONSOLE* for console commands)
+#   {uuid} - Player's UUID (empty for console commands)
+#   {ip} - Player's IP address (empty for console commands or if not available)
+#   {full_command} - The command executed excluding the '/'
+#   {base_command} - The command executed excluding the '/' and any arguments
+#   {arguments} - The arguments provided to the command, empty if none
+
+
 # Toggle all logging features (basically the entire plugin)
 enabled: true
 
-# This filter to applies to ALL command logging (combined, players, console, and all splits)
-# All filters use regex (see https://regex101.com). If a command (excluding the /) matches the filter, it will NOT be logged.
-# Example: "me.*" would filter out all /me commands
-# Filters can be applied to both combined logs and splits
-filter: ""
+# These filters apply to ALL command loggers (combined, players, and console) and are considered first
+# All filters use regex (see https://regex101.com)
+# Filters can be applied to any logger! Exclude filters override include filters!
+filters:
+  # If a full command (excluding the /) matches this regex, it WILL be logged
+  # Example: "op.*" would log all /op commands even if another filter excludes them
+  include: ""
+  # If a full command (excluding the /) matches this regex, it will NOT be logged
+  # Example: "help.*" would exclude all /help commands from being logged
+  exclude: ""
 
 # Configurable formats for some variables, such as date and time
 variable-formats:
@@ -18,68 +34,53 @@ variable-formats:
     file-names: "HH-mm-ss"
     formats: "HH:mm:ss"
 
-# Combined player and console logging
-combined:
-  enabled: true
-  file: "all.log"
-  filter: ""
-  # Available placeholders:
-  # {date} - Current date as variable-formats.date.formats
-  # {time} - Current time as variable-formats.time.formats
-  # {player} - The player's name (*CONSOLE* for console commands)
-  # {uuid} - Player's UUID (empty for console commands)
-  # {ip} - Player's IP address (empty for console commands or if not available)
-  # {full_command} - The command executed excluding the '/'
-  # {base_command} - The command executed excluding the '/' and any arguments
-  # {arguments} - The arguments provided to the command, empty if none
-  format: "[{date} {time}] [{player}] /{full_command}"
+# Combined player and console loggers (fields: enabled, file-name, filter, format)
+# Several examples are provided below
+loggers:
+  # This is the "combined" logger for ALL commands
+  - enabled: true
+    file-name: "all.log"
+    format: "[{date} {time}] [{player}] /{full_command}"
+  # This logger creates a separate log file for each day
+  - enabled: false
+    file-name: "all/{date}.log"
+    format: "[{time}] [{player}] /{full_command}"
+  # This logger creates a log file only for /op commands
+  - enabled: false
+    file-name: "{base_command}.log"
+    filters:
+      include: "op.*"
+    format: "[{date} {time}] [{player}] /{full_command}"
 
 # Commands executed by players
 players:
+  # Toggle all player command loggers
   enabled: true
 
-  # This filter applies to all player-ran commands (combined and splits)
-  filter: ""
+  # These filters apply to all player-ran command loggers
+  # These are considered after the global filters but before individual logger filters
+  filter:
+    include: ""
+    exclude: ""
 
-  # One big continuous file for all player-ran commands
-  combined:
-    enabled: true
-    file: "players.log"
-    required-permission: ""
-    filter: ""
-    # Available placeholders:
-    # {date} - Current date as variable-formats.date.formats
-    # {time} - Current time as variable-formats.time.formats
-    # {player} - The player's name
-    # {uuid} - Player's UUID
-    # {ip} - Player's IP address (empty if not available)
-    # {full_command} - The command executed excluding the '/'
-    # {base_command} - The command executed excluding the '/' and any arguments
-    # {arguments} - The arguments provided to the command, empty if none
-    format: "[{date} {time}] [{player}] /{full_command}"
-
-  # Split player commands into separate files based on different parameters
-  # Available placeholders:
-  # {player} - Player's name
-  # {uuid} - Player's UUID
-  # {ip} - Player's IP address (empty if not available)
-  # {date} - Current date as variable-formats.date
-  # {time} - Current time as variable-formats.time
-  # {full_command} - The command executed excluding the '/' (format only)
-  # {base_command} - The command executed excluding the '/' and any arguments (format only)
-  # {arguments} - The arguments provided to the command, empty if none (format only)
-  splits:
+  # Loggers for player commands (fields: enabled, file-name, required-permission, filters, format)
+  # Several examples are provided below
+  loggers:
+    # This is the "combined" logger for ALL player commands
+    - enabled: true
+      file-name: "players.log"
+      format: "[{date} {time}] [{player}] /{full_command}"
+    # This logger creates a separate log file for each player based on their UUID
     - enabled: true
       file-name: "players/{uuid}.log"
       format: "[{date} {time}] /{full_command}"
+    # This logger creates a separate log file for each player for each day, excluding /login commands
     - enabled: false
       file-name: "players/{uuid}/{date}.log"
-      filter: "login.*"
+      filters:
+        exclude: "login.*"
       format: "[{time}] /{full_command}"
-    - enabled: false
-      file-name: "players/builders.log"
-      required-permission: "group.builder"
-      format: "[{date} {time}] [{player}] /{full_command}"
+    # This logger creates a log file for all players with the group.mod permission
     - enabled: false
       file-name: "players/mods.log"
       required-permission: "group.mod"
@@ -87,33 +88,29 @@ players:
 
 # Commands executed by the console
 console:
+  # Toggle all console command loggers
   enabled: true
 
-  # This filter applies to all console commands (combined and splits)
-  filter: ""
+  # These filters apply to all console command loggers
+  # These are considered after the global filters but before individual logger filters
+  filters:
+    include: ""
+    exclude: ""
 
-  # One big continuous file for all console commands
-  combined:
-    enabled: true
-    file: "console.log"
-    filter: ""
-    # Available placeholders:
-    # {date} - Current date as variable-formats.date.formats
-    # {time} - Current time as variable-formats.time.formats
-    # {full_command} - The command executed excluding the '/'
-    # {base_command} - The command executed excluding the '/' and any arguments
-    # {arguments} - The arguments provided to the command, empty if none
-    format: "[{date} {time}] /{full_command}"
-
-  # Split console commands into separate files based on different parameters
-  # Available placeholders:
-  # {date} - Current date as variable-formats.date
-  # {time} - Current time as variable-formats.time
-  # {full_command} - The command executed excluding the '/' (format only)
-  # {base_command} - The command executed excluding the '/' and any arguments (format only)
-  # {arguments} - The arguments provided to the command, empty if none (format only)
-  splits:
+  # Loggers for console commands (fields: enabled, file-name, filters, format)
+  # Several examples are provided below
+  loggers:
+    # This is the "combined" logger for ALL console commands
+    - enabled: true
+      file-name: "console.log"
+      format: "[{date} {time}] /{full_command}"
+    # This logger creates a separate log file for each day
     - enabled: true
       file-name: "console/{date}.log"
-      filter: ""
       format: "[{time}] /{full_command}"
+    # This logger creates a log file excluding /save-all commands
+    - enabled: false
+      file-name: "console-no-saveall.log"
+      filters:
+        exclude: "save-all.*"
+      format: "[{date} {time}] /{full_command}"

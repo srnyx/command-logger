@@ -1,7 +1,8 @@
 package com.srnyx.commandlogger.listeners;
 
 import com.srnyx.commandlogger.CommandLogger;
-import com.srnyx.commandlogger.config.Split;
+import com.srnyx.commandlogger.InfoForVariables;
+import com.srnyx.commandlogger.config.ConfigLogger;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.server.ServerCommandEvent;
@@ -38,57 +39,43 @@ public class ConsoleCommandListener extends AnnoyingListener {
         final String command = event.getCommand();
 
         // Check all filter
-        if (plugin.config.filter != null && plugin.config.filter.matcher(command).matches()) return;
+        if (plugin.config.filters != null && plugin.config.filters.doesNotPass(command)) return;
 
         // Check console filter
-        if (plugin.config.console.filter != null && plugin.config.console.filter.matcher(command).matches()) return;
+        if (plugin.config.console.filters != null && plugin.config.console.filters.doesNotPass(command)) return;
 
-        // Combined
-        if (plugin.config.combined.enabled) {
+        final InfoForVariables info = new InfoForVariables(event);
+
+        // Combined loggers
+        for (final ConfigLogger logger : plugin.config.loggers) {
             // Check filter
-            if (plugin.config.combined.filter != null && plugin.config.combined.filter.matcher(command).matches()) return;
+            if (logger.filters != null && logger.filters.doesNotPass(command)) return;
 
             // Add to log
             try {
-                Files.createDirectories(plugin.config.combined.file.getParent());
+                final Path file = logger.filePath(info);
+                Files.createDirectories(file.getParent());
                 Files.write(
-                        plugin.config.combined.file,
-                        plugin.config.combined.format(event).getBytes(),
+                        file,
+                        logger.format(info).getBytes(),
                         StandardOpenOption.CREATE, StandardOpenOption.APPEND);
             } catch (final Exception e) {
                 AnnoyingPlugin.log(Level.WARNING, "&cFailed to write to combined command log file for a console command!", e);
             }
         }
 
-        // Combined
-        if (plugin.config.console.combined.enabled) {
+        // Console loggers
+        for (final ConfigLogger logger : plugin.config.console.loggers) {
             // Check filter
-            if (plugin.config.console.combined.filter != null && plugin.config.console.combined.filter.matcher(command).matches()) return;
+            if (logger.filters != null && logger.filters.doesNotPass(command)) continue;
 
             // Add to log
             try {
-                Files.createDirectories(plugin.config.console.combined.file.getParent());
-                Files.write(
-                        plugin.config.console.combined.file,
-                        plugin.config.console.combined.format(event).getBytes(),
-                        StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-            } catch (final Exception e) {
-                AnnoyingPlugin.log(Level.WARNING, "&cFailed to write to combined console command log file!", e);
-            }
-        }
-
-        // Splits
-        for (final Split split : plugin.config.console.splits) {
-            // Check filter
-            if (split.filter != null && split.filter.matcher(command).matches()) continue;
-
-            // Add to log
-            try {
-                final Path file = plugin.logsFolder.resolve(plugin.processFileNameVariables(split.fileName));
+                final Path file = logger.filePath(info);
                 Files.createDirectories(file.getParent());
                 Files.write(
                         file,
-                        split.format(event).getBytes(),
+                        logger.format(info).getBytes(),
                         StandardOpenOption.CREATE, StandardOpenOption.APPEND);
             } catch (final Exception e) {
                 AnnoyingPlugin.log(Level.WARNING, "&cFailed to write to console command log file!", e);
