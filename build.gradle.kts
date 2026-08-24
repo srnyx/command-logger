@@ -1,24 +1,57 @@
-import xyz.srnyx.gradlegalaxy.data.config.DependencyConfig
-import xyz.srnyx.gradlegalaxy.data.config.JavaSetupConfig
-import xyz.srnyx.gradlegalaxy.enums.Repository
-import xyz.srnyx.gradlegalaxy.enums.repository
-import xyz.srnyx.gradlegalaxy.utility.paper
-import xyz.srnyx.gradlegalaxy.utility.setupAnnoyingAPI
-
-
 plugins {
     java
-    id("xyz.srnyx.gradle-galaxy") version "2.0.2"
-    id("com.gradleup.shadow") version "8.3.9"
+    id("xyz.srnyx.gradle-galaxy") version "c151767"
+    id("com.gradleup.shadow") version "9.6.1"
+    id("me.modmuss50.mod-publish-plugin") version "675051c"
+    id("io.papermc.hangar-publish-plugin") version "0.1.4"
+    id("xyz.jpenilla.run-paper") version "3.1.0"
 }
 
-paper(config = DependencyConfig(version = "1.8.8"))
-setupAnnoyingAPI(
-    javaSetupConfig = JavaSetupConfig(
-        group = "com.srnyx",
-        version = "2.0.0",
-        description = "Log commands executed by players and console to one file or multiple files"),
-    annoyingAPIConfig = DependencyConfig(version = "e9ad7a91ef"))
+group = "com.srnyx"
+description = "Log commands executed by players and console to one file or multiple files"
 
-repository(Repository.PLACEHOLDER_API)
-dependencies.compileOnly("me.clip", "placeholderapi", "2.11.6")
+galaxy {
+    minecraft {
+        paper("1.8.8")
+        annoyingAPI("45ae893")
+
+        dependency {
+            optional {
+                repositories.add(PLACEHOLDER_API)
+                group = "me.clip"
+                artifact = "placeholderapi"
+                version = "2.12.2"
+
+                pluginYml = "PlaceholderAPI"
+                modrinth = "placeholderapi"
+                hangar = "PlaceholderAPI"
+            }
+        }
+
+        pluginYml {
+            developerData(SRNYX)
+
+            command("commandloggerreload") {
+                aliases.add("clreload")
+                description = "Reloads the Command Logger configuration"
+
+                permission("reload")
+            }
+        }
+
+        platformPublishing {
+            github("srnyx/command-logger")
+            modrinth("PMWx2eoO")
+            hangar("CommandLogger")
+            spigot("126150")
+            curseforge("1289091")
+
+            projectData("command-logger")
+        }
+    }
+
+    testing {
+        jUnit("6.1.0")
+        mockBukkit("3.9.0")
+    }
+}

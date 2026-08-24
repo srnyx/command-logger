@@ -2,15 +2,13 @@ package com.srnyx.commandlogger.listeners;
 
 import com.srnyx.commandlogger.CommandLogger;
 import com.srnyx.commandlogger.InfoForVariables;
-import com.srnyx.commandlogger.config.ConfigLogger;
-
+import com.srnyx.commandlogger.config.ConfigYml;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.server.ServerCommandEvent;
-
 import org.jetbrains.annotations.NotNull;
-
 import xyz.srnyx.annoyingapi.AnnoyingListener;
 import xyz.srnyx.annoyingapi.AnnoyingPlugin;
+import xyz.srnyx.annoyingapi.parents.Registrable;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,6 +16,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.logging.Level;
 
 
+@Registrable.Ignore
 public class ConsoleCommandListener extends AnnoyingListener {
     @NotNull private final CommandLogger plugin;
 
@@ -47,7 +46,7 @@ public class ConsoleCommandListener extends AnnoyingListener {
         final InfoForVariables info = new InfoForVariables(event);
 
         // Combined loggers
-        for (final ConfigLogger logger : plugin.config.loggers) {
+        for (final ConfigYml.ConfigLogger logger : plugin.config.loggers) {
             // Check filter
             if (logger.filters != null && logger.filters.doesNotPass(command)) return;
 
@@ -65,7 +64,7 @@ public class ConsoleCommandListener extends AnnoyingListener {
         }
 
         // Console loggers
-        for (final ConfigLogger logger : plugin.config.console.loggers) {
+        for (final ConfigYml.ConfigLogger logger : plugin.config.console.loggers) {
             // Check filter
             if (logger.filters != null && logger.filters.doesNotPass(command)) continue;
 

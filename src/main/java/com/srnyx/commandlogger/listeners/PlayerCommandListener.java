@@ -2,16 +2,14 @@ package com.srnyx.commandlogger.listeners;
 
 import com.srnyx.commandlogger.CommandLogger;
 import com.srnyx.commandlogger.InfoForVariables;
-import com.srnyx.commandlogger.config.ConfigLogger;
-
+import com.srnyx.commandlogger.config.ConfigYml;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-
 import org.jetbrains.annotations.NotNull;
-
 import xyz.srnyx.annoyingapi.AnnoyingListener;
 import xyz.srnyx.annoyingapi.AnnoyingPlugin;
+import xyz.srnyx.annoyingapi.parents.Registrable;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,6 +17,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.logging.Level;
 
 
+@Registrable.Ignore
 public class PlayerCommandListener extends AnnoyingListener {
     @NotNull private final CommandLogger plugin;
 
@@ -48,7 +47,7 @@ public class PlayerCommandListener extends AnnoyingListener {
         final InfoForVariables info = new InfoForVariables(event);
 
         // Combined loggers
-        for (final ConfigLogger logger : plugin.config.loggers) {
+        for (final ConfigYml.ConfigLogger logger : plugin.config.loggers) {
             // Check filter
             if (logger.filters != null && logger.filters.doesNotPass(command)) return;
 
@@ -68,20 +67,20 @@ public class PlayerCommandListener extends AnnoyingListener {
         // Player loggers
         final Player player = event.getPlayer();
         final String name = player.getName();
-        for (final ConfigLogger.PlayerLogger split : plugin.config.players.loggers) {
+        for (final ConfigYml.Players.PlayerLogger logger : plugin.config.players.loggers) {
             // Check filter
-            if (split.filters != null && split.filters.doesNotPass(command)) continue;
+            if (logger.filters != null && logger.filters.doesNotPass(command)) continue;
 
             // Check permission
-            if (!split.hasRequiredPermission(player)) continue;
+            if (!logger.hasRequiredPermission(player)) continue;
 
             // Add to log
             try {
-                final Path file = split.filePath(info);
+                final Path file = logger.filePath(info);
                 Files.createDirectories(file.getParent());
                 Files.write(
                         file,
-                        split.format(info).getBytes(),
+                        logger.format(info).getBytes(),
                         StandardOpenOption.CREATE, StandardOpenOption.APPEND);
             } catch (final Exception e) {
                 AnnoyingPlugin.log(Level.WARNING, "&cFailed to write to player command log file for " + name + "!", e);

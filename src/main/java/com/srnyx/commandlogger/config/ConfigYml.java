@@ -2,115 +2,125 @@ package com.srnyx.commandlogger.config;
 
 import com.srnyx.commandlogger.CommandLogger;
 import com.srnyx.commandlogger.InfoForVariables;
-
+import eu.okaeri.configs.annotation.Comment;
+import eu.okaeri.configs.annotation.Header;
+import eu.okaeri.configs.annotation.Include;
+import eu.okaeri.configs.annotation.IncludePosition;
+import eu.okaeri.validator.annotation.NotNull;
+import eu.okaeri.validator.annotation.Nullable;
 import me.clip.placeholderapi.PlaceholderAPI;
-
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import xyz.srnyx.annoyingapi.AnnoyingPlugin;
-import xyz.srnyx.annoyingapi.file.AnnoyingResource;
+import xyz.srnyx.annoyingapi.file.okaeri.AnnoyingConfig;
+import xyz.srnyx.annoyingapi.file.okaeri.RootConfig;
+import xyz.srnyx.annoyingapi.file.okaeri.SubConfig;
 
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 
-public class ConfigYml {
-    @NotNull private final CommandLogger plugin;
-    @NotNull private final AnnoyingResource config;
-    @NotNull public final Path logsFolder;
+@Header("Available placeholders for file names and formats:")
+@Header("  {date} - Current date as variable_formats.date")
+@Header("  {time} - Current time as variable_formats.time")
+@Header("  {player} - The player's name (*CONSOLE* for console commands)")
+@Header("  {uuid} - Player's UUID (empty for console commands)")
+@Header("  {ip} - Player's IP address (empty for console commands or if not available)")
+@Header("  {full_command} - The command executed excluding the '/'")
+@Header("  {base_command} - The command executed excluding the '/' and any arguments")
+@Header("  {arguments} - The arguments provided to the command, empty if none")
+public class ConfigYml extends RootConfig {
+    @Comment
+    @Comment
+    @Comment("Toggle all logging features (basically the entire plugin)")
+    public boolean enabled = true;
 
-    public final boolean enabled;
-    @Nullable public final Filters filters;
-    @NotNull public final VariableFormats variableFormats;
-    @NotNull public final List<ConfigLogger> loggers = new ArrayList<>();
-    @NotNull public final Players players;
-    @NotNull public final Console console;
+    @Comment
+    @Comment("These filters apply to ALL command loggers (combined, players, and console) and are considered first")
+    @Comment("All filters use regex (see https://regex101.com). Set to null for no filter.")
+    @Comment("Filters can be applied to any logger! Exclude filters override include filters!")
+    @Comment(" ")
+    @Comment("--- include ---")
+    @Comment("If a full command (excluding the /) matches this regex, it WILL be logged")
+    @Comment("Example: \"op.*\" would log all /op commands even if another filter excludes them")
+    @Comment(" ")
+    @Comment("--- exclude ---")
+    @Comment("If a full command (excluding the /) matches this regex, it will NOT be logged")
+    @Comment("Example: \"help.*\" would exclude all /help commands from being logged")
+    @Nullable public Filters filters = new Filters();
 
-    public ConfigYml(@NotNull CommandLogger plugin) {
+    @Comment
+    @Comment("Configurable formats for some variables, such as date and time")
+    @NotNull public VariableFormats variable_formats = new VariableFormats(this);
+
+    @Comment
+    @Comment("Combined player and console loggers (fields: enabled, file_name, filter, format)")
+    @Comment("Several examples are provided below:")
+    @Comment("  - File for ALL commands")
+    @Comment("  - Separate file for each day")
+    @Comment("  - File for only /op commands")
+    @NotNull public List<ConfigLogger> loggers = List.of(
+            new ConfigLogger(this,
+                    true, "all.log",
+                    null,
+                    "[{date} {time}] [{player}] /{full_command}"),
+            new ConfigLogger(this,
+                    false, "all/{date}.log",
+                    null,
+                    "[{time}] [{player}] /{full_command}"),
+            new ConfigLogger(this,
+                    false, "{base_command}.log",
+                    new Filters("op.*", null),
+                    "[{date} {time}] [{player}] /{full_command}"));
+
+    @Comment
+    @Comment("Commands executed by players")
+    @NotNull public Players players = new Players(this);
+
+    @Comment
+    @Comment("Commands executed by the console")
+    @NotNull public Console console = new Console(this);
+
+
+    @org.jetbrains.annotations.NotNull public transient final CommandLogger plugin;
+
+    public ConfigYml(@org.jetbrains.annotations.NotNull CommandLogger plugin) {
         this.plugin = plugin;
-        config = new AnnoyingResource(plugin, "config.yml");
-        logsFolder = plugin.getDataFolder().toPath().resolve("logs");
+    }
 
-        enabled = config.getBoolean("enabled", true);
-        filters = Filters.getFilters(config.getConfigurationSection("filters"));
-        variableFormats = new VariableFormats();
-        players = new Players();
-        console = new Console();
+    public static class Filters extends AnnoyingConfig {
+        @Nullable public Pattern include = null;
 
-        // loggers
-        for (final Map<?, ?> map : config.getMapList("loggers")) {
-            try {
-                final Boolean loggerEnabled = (Boolean) map.get("enabled");
-                if (loggerEnabled != null && loggerEnabled) loggers.add(new ConfigLogger(this, map));
-            } catch (final ClassCastException | IllegalArgumentException e) {
-                AnnoyingPlugin.log(Level.WARNING, "&cFailed to load a command logger from config.yml due to invalid options! Skipping it...", e);
-            }
+        @Nullable public Pattern exclude = null;
+
+        public boolean doesNotPass(@org.jetbrains.annotations.NotNull String command) {
+            if (exclude != null && !exclude.pattern().isEmpty() && exclude.matcher(command).matches()) return true;
+            return include != null && !include.pattern().isEmpty() && !include.matcher(command).matches();
         }
 
-        // LEGACY: combined
-        if (config.contains("combined")) {
-            final Combined combined = new Combined();
-            if (combined.enabled) loggers.add(new ConfigLogger(this, combined.file, combined.format));
+
+        public Filters(@org.jetbrains.annotations.Nullable String include, @org.jetbrains.annotations.Nullable String exclude) {
+            if (include != null) this.include = Pattern.compile(include);
+            if (exclude != null) this.exclude = Pattern.compile(exclude);
+        }
+
+        public Filters() {
+            this(null, null);
         }
     }
 
-    public static class Filters {
-        @Nullable public final Pattern include;
-        @Nullable public final Pattern exclude;
-
-        public Filters(@Nullable String include, @Nullable String exclude) {
-            this.include = getFilter(include);
-            this.exclude = getFilter(exclude);
-        }
-
-        public boolean doesNotPass(@NotNull String command) {
-            if (exclude != null && exclude.matcher(command).matches()) return true;
-            return include != null && !include.matcher(command).matches();
-        }
-
-        @Nullable
-        public static Filters getFilters(@Nullable ConfigurationSection section) {
-            return section != null ? new Filters(section.getString("include"), section.getString("exclude")) : null;
-        }
-
-        @Nullable
-        public static Filters getFilters(@Nullable Map<?, ?> map) {
-            try {
-                return map != null ? new Filters((String) map.get("include"), (String) map.get("exclude")) : null;
-            } catch (final ClassCastException e) {
-                AnnoyingPlugin.log(Level.WARNING, "&cFailed to load a command filter from config.yml due to invalid options! Skipping these filters...", e);
-                return null;
-            }
-        }
-
-        @Nullable
-        private static Pattern getFilter(@Nullable String filter) {
-            return filter != null && !filter.trim().isEmpty() ? Pattern.compile(filter) : null;
-        }
-    }
-
-    @NotNull
-    protected String processVariables(@NotNull String string, @NotNull InfoForVariables info) {
+    @org.jetbrains.annotations.NotNull
+    protected String processVariables(@org.jetbrains.annotations.NotNull String string, @org.jetbrains.annotations.NotNull InfoForVariables info) {
         // PlaceholderAPI (run first so placeholders in raw command aren't replaced)
-        if (plugin.papiInstalled) string = PlaceholderAPI.setPlaceholders(info.sender instanceof Player ? (Player) info.sender : null, string);
+        if (plugin.papiInstalled) string = PlaceholderAPI.setPlaceholders(info.sender instanceof Player player ? player : null, string);
 
         // Get plugin placeholders
         String playerName = info.sender.getName();
         String uuid = "";
         String ip = "";
-        if (info.sender instanceof Player) {
-            final Player player = (Player) info.sender;
+        if (info.sender instanceof Player player) {
             final InetSocketAddress address = player.getAddress();
             uuid = player.getUniqueId().toString();
             ip = address != null ? address.getAddress().getHostAddress() : "";
@@ -126,8 +136,8 @@ public class ConfigYml {
         // Replace plugin placeholders
         final Date now = new Date();
         return string
-                .replace("{date}", variableFormats.date.formats.format(now))
-                .replace("{time}", variableFormats.time.formats.format(now))
+                .replace("{date}", variable_formats.date.formats.format(now))
+                .replace("{time}", variable_formats.time.formats.format(now))
                 .replace("{player}", playerName)
                 .replace("{uuid}", uuid)
                 .replace("{ip}", ip)
@@ -137,116 +147,190 @@ public class ConfigYml {
                 .replace("{command}", info.command); // Legacy/old
     }
 
-    @NotNull
-    public String processFormatVariables(@NotNull String format, @NotNull InfoForVariables info) {
+    @org.jetbrains.annotations.NotNull
+    public String processFormatVariables(@org.jetbrains.annotations.NotNull String format, @org.jetbrains.annotations.NotNull InfoForVariables info) {
         return processVariables(format, info) + "\n";
     }
 
-    public class VariableFormats {
-        @NotNull public final Date date = new Date();
-        @NotNull public final Time time = new Time();
-
-        public class Date {
-            @NotNull public final SimpleDateFormat fileNames = new SimpleDateFormat(config.getString("variable-formats.date.file-names", "yyyy-MM-dd"));
-            @NotNull public final SimpleDateFormat formats = new SimpleDateFormat(config.getString("variable-formats.date.formats", "MM-dd-yyyy"));
+    public static class VariableFormats extends SubConfig<ConfigYml, ConfigYml> {
+        public VariableFormats(@org.jetbrains.annotations.NotNull ConfigYml defaultsParent) {
+            super(defaultsParent);
         }
 
-        public class Time {
-            @NotNull public final SimpleDateFormat fileNames = new SimpleDateFormat(config.getString("variable-formats.time.file-names", "HH-mm-ss"));
-            @NotNull public final SimpleDateFormat formats = new SimpleDateFormat(config.getString("variable-formats.time.formats", "HH:mm:ss"));
+        @Comment("https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html")
+        @NotNull public Date date = new Date(this);
+
+        @Comment("https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html")
+        @NotNull public Time time = new Time(this);
+
+        public static class Date extends SubConfig<ConfigYml, VariableFormats> {
+            public Date(@org.jetbrains.annotations.NotNull VariableFormats defaultsParent) {
+                super(defaultsParent);
+            }
+
+            @NotNull public SimpleDateFormat file_names = new SimpleDateFormat("yyyy-MM-dd");
+
+            @NotNull public SimpleDateFormat formats = new SimpleDateFormat("MM-dd-yyyy");
+        }
+
+        //TODO common class with Date
+        public static class Time extends SubConfig<ConfigYml, VariableFormats> {
+            public Time(@org.jetbrains.annotations.NotNull VariableFormats defaultsParent) {
+                super(defaultsParent);
+            }
+
+            @NotNull public SimpleDateFormat file_names = new SimpleDateFormat("HH-mm-ss");
+
+            @NotNull public SimpleDateFormat formats = new SimpleDateFormat("HH:mm:ss");
         }
     }
 
-    @Deprecated
-    public class Combined {
-        public final boolean enabled = config.getBoolean("combined.enabled", false);
-        @NotNull public final String file = config.getString("combined.file", "commands.log");
-        @NotNull public final String format = config.getString("combined.format", "[{date} {time}] [{player}] /{full_command}");
+    public static class ConfigLogger extends SubConfig<ConfigYml, ConfigYml> {
+        public boolean enabled;
 
-        @NotNull
-        public String format(@NotNull InfoForVariables info) {
-            return processFormatVariables(format, info);
+        @NotNull public String file_name;
+
+        @Nullable public Filters filters;
+
+        @NotNull public String format;
+
+        public ConfigLogger(@org.jetbrains.annotations.NotNull ConfigYml defaultsParent, boolean enabled, @org.jetbrains.annotations.NotNull String fileName, @org.jetbrains.annotations.Nullable Filters filters, @org.jetbrains.annotations.NotNull String format) {
+            super(defaultsParent);
+            this.enabled = enabled;
+            this.file_name = fileName;
+            this.filters = filters;
+            this.format = format;
+        }
+
+        @org.jetbrains.annotations.NotNull
+        public Path processFileNameVariables(@org.jetbrains.annotations.NotNull String fileName, @org.jetbrains.annotations.NotNull InfoForVariables info) {
+            final ConfigYml root = getRoot();
+
+            // Temporarily replace slashes with private use character to prevent sanitization of them
+            fileName = fileName.replace("/", "\uE000");
+
+            // File-specific plugin placeholders
+            final Date now = new Date();
+            fileName = fileName
+                    .replace("{date}", root.variable_formats.date.file_names.format(now))
+                    .replace("{time}", root.variable_formats.time.file_names.format(now));
+
+            // Other plugin placeholders
+            fileName = root.processVariables(fileName, info);
+
+            // Sanitize file name
+            return root.plugin.logsFolder.resolve(fileName
+                    .replaceAll("[\\\\/:*?\"<>|]", "_")
+                    .replaceAll("[. ]+$", "")
+                    .replace("\uE000", "/")); // Restore slashes
+        }
+
+        @org.jetbrains.annotations.NotNull
+        public Path filePath(@org.jetbrains.annotations.NotNull InfoForVariables info) {
+            return processFileNameVariables(file_name, info);
+        }
+
+        @org.jetbrains.annotations.NotNull
+        public String format(@org.jetbrains.annotations.NotNull InfoForVariables info) {
+            return getRoot().processFormatVariables(format, info);
         }
     }
 
-    public class Players {
-        public final boolean enabled = config.getBoolean("players.enabled", true);
-        @Nullable public final Filters filters = Filters.getFilters(config.getConfigurationSection("players.filters"));
-        @NotNull public final List<ConfigLogger.PlayerLogger> loggers = new ArrayList<>();
-
-        public Players() {
-            // loggers
-            for (final Map<?, ?> map : config.getMapList("players.loggers")) {
-                try {
-                    final Boolean enabled = (Boolean) map.get("enabled");
-                    if (enabled != null && enabled) loggers.add(new ConfigLogger.PlayerLogger(ConfigYml.this, map));
-                } catch (final ClassCastException | IllegalArgumentException e) {
-                    AnnoyingPlugin.log(Level.WARNING, "&cFailed to load a player command logger from config.yml due to invalid options! Skipping it...", e);
-                }
-            }
-
-            // LEGACY: combined
-            if (config.contains("players.combined")) {
-                final Combined combined = new Combined();
-                if (combined.enabled) loggers.add(new ConfigLogger.PlayerLogger(ConfigYml.this, combined.file, combined.format, combined.requiredPermission));
-            }
-            // LEGACY: splits
-            for (final Map<?, ?> map : config.getMapList("players.splits")) {
-                try {
-                    final Boolean enabled = (Boolean) map.get("enabled");
-                    if (enabled != null && enabled) loggers.add(new ConfigLogger.PlayerLogger(ConfigYml.this, map));
-                } catch (final ClassCastException | IllegalArgumentException e) {
-                    AnnoyingPlugin.log(Level.WARNING, "&cFailed to load a player command split from config.yml due to invalid options! Skipping it...", e);
-                }
-            }
+    public static class Players extends SubConfig<ConfigYml, ConfigYml> {
+        public Players(@org.jetbrains.annotations.NotNull ConfigYml defaultsParent) {
+            super(defaultsParent);
         }
 
-        @Deprecated
-        private class Combined {
-            public final boolean enabled = config.getBoolean("players.combined.enabled", false);
-            @NotNull public final String file = config.getString("players.combined.file", "players.log");
-            @Nullable public final String requiredPermission = config.getString("players.combined.required-permission");
-            @NotNull public final String format = config.getString("players.combined.format", "[{date} {time}] [{player}] /{full_command}");
+        @Comment("Toggle all player command loggers")
+        public boolean enabled = true;
+
+        @Comment
+        @Comment("These filters apply to all player-ran command loggers")
+        @Comment("These are considered after the global filters but before individual logger filters")
+        @Nullable public Filters filters = new Filters();
+
+        @Comment
+        @Comment("Loggers for player commands (fields: enabled, file_name, required_permission, filters, format)")
+        @Comment("Several examples are provided below:")
+        @Comment("  - File for ALL player commands")
+        @Comment("  - Separate file for each player UUID")
+        @Comment("  - Separate file for each player UUID for each day excluding /login")
+        @Comment("  - File for all players with group.mod permission")
+        @NotNull public List<PlayerLogger> loggers = List.of(
+                new PlayerLogger(getRoot(),
+                        true,
+                        "players.log",
+                        null,
+                        "[{date} {time}] [{player}] /{full_command}",
+                        null),
+                new PlayerLogger(getRoot(),
+                        true,
+                        "players/{uuid}.log",
+                        null,
+                        "[{date} {time}] /{full_command}",
+                        null),
+                new PlayerLogger(getRoot(),
+                        false,
+                        "players/{uuid}/{date}.log",
+                        new Filters(null, "login.*"),
+                        "[{time}] /{full_command}",
+                        null),
+                new PlayerLogger(getRoot(),
+                        false,
+                        "players/mods.log",
+                        null,
+                        "[{date} {time}] [{player}] /{full_command}",
+                        "group.mod"));
+
+        @Include(value = ConfigLogger.class, position = IncludePosition.BEFORE)
+        public static class PlayerLogger extends ConfigLogger {
+            @Nullable public String required_permission;
+
+            public PlayerLogger(@org.jetbrains.annotations.NotNull ConfigYml defaultsParent, boolean enabled, @org.jetbrains.annotations.NotNull String fileName, @org.jetbrains.annotations.Nullable Filters filters, @org.jetbrains.annotations.NotNull String format, @org.jetbrains.annotations.Nullable String requiredPermission) {
+                super(defaultsParent, enabled, fileName, filters, format);
+                this.required_permission = requiredPermission;
+            }
+
+            public boolean hasRequiredPermission(@org.jetbrains.annotations.NotNull Player player) {
+                return required_permission == null || player.hasPermission(required_permission);
+            }
         }
     }
 
-    public class Console {
-        public final boolean enabled = config.getBoolean("console.enabled", true);
-        @Nullable public final Filters filters = Filters.getFilters(config.getConfigurationSection("console.filters"));
-        @NotNull public final List<ConfigLogger> loggers = new ArrayList<>();
-
-        public Console() {
-            // loggers
-            for (final Map<?, ?> map : config.getMapList("console.loggers")) {
-                try {
-                    final Boolean enabled = (Boolean) map.get("enabled");
-                    if (enabled != null && enabled) loggers.add(new ConfigLogger(ConfigYml.this, map));
-                } catch (final ClassCastException | IllegalArgumentException e) {
-                    AnnoyingPlugin.log(Level.WARNING, "&cFailed to load a console command logger from config.yml due to invalid options! Skipping it...", e);
-                }
-            }
-
-            // LEGACY: combined
-            if (config.contains("console.combined")) {
-                final Combined combined = new Combined();
-                if (combined.enabled) loggers.add(new ConfigLogger(ConfigYml.this, combined.file, combined.format));
-            }
-            // LEGACY: splits
-            for (final Map<?, ?> map : config.getMapList("console.splits")) {
-                try {
-                    final Boolean enabled = (Boolean) map.get("enabled");
-                    if (enabled != null && enabled) loggers.add(new ConfigLogger(ConfigYml.this, map));
-                } catch (final ClassCastException | IllegalArgumentException e) {
-                    AnnoyingPlugin.log(Level.WARNING, "&cFailed to load a console split from config.yml due to invalid options! Skipping it...", e);
-                }
-            }
+    public static class Console extends SubConfig<ConfigYml, ConfigYml> {
+        public Console(@org.jetbrains.annotations.NotNull ConfigYml defaultsParent) {
+            super(defaultsParent);
         }
 
-        @Deprecated
-        private class Combined {
-            public final boolean enabled = config.getBoolean("console.combined.enabled", false);
-            @NotNull public final String file = config.getString("console.combined.file", "console.log");
-            @NotNull public final String format = config.getString("console.combined.format", "[{date} {time}] /{full_command}");
-        }
+        @Comment("Toggle all console command loggers")
+        public boolean enabled = true;
+
+        @Comment
+        @Comment("These filters apply to all console command loggers")
+        @Comment("These are considered after the global filters but before individual logger filters")
+        @Nullable public Filters filters = new Filters();
+
+        @Comment
+        @Comment("Loggers for console commands (fields: enabled, file_name, filters, format)")
+        @Comment("Several examples are provided below:")
+        @Comment("  - File for ALL console commands")
+        @Comment("  - Separate file for each day")
+        @Comment("  - File excluding /save-all")
+        @NotNull public List<ConfigLogger> loggers = List.of(
+                new ConfigLogger(getRoot(),
+                        true,
+                        "console.log",
+                        null,
+                        "[{date} {time}] /{full_command}"),
+                new ConfigLogger(getRoot(),
+                        true,
+                        "console/{date}.log",
+                        null,
+                        "[{time}] /{full_command}"),
+                new ConfigLogger(getRoot(),
+                        false,
+                        "console-no-saveall.log",
+                        new Filters(null, "save-all.*"),
+                        "[{date} {time}] /{full_command}"));
     }
 }

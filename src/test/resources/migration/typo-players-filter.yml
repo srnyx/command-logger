@@ -1,0 +1,44 @@
+enabled: true
+
+filters:
+  include: ""
+  exclude: ""
+
+variable-formats:
+  date:
+    file-names: "yyyy-MM-dd"
+    formats: "MM-dd-yyyy"
+  time:
+    file-names: "HH-mm-ss"
+    formats: "HH:mm:ss"
+
+loggers:
+  - enabled: true
+    file-name: "all.log"
+    format: "[{date} {time}] [{player}] /{full_command}"
+
+players:
+  enabled: true
+
+  # Typo'd key: should be "filters", not "filter". Value is already an object
+  # (not a legacy String), so C0003 must not touch this - only C0004 should.
+  filter:
+    include: ""
+    exclude: "test"
+
+  loggers:
+    - enabled: true
+      file-name: "players.log"
+      format: "[{date} {time}] [{player}] /{full_command}"
+
+console:
+  enabled: true
+
+  filters:
+    include: ""
+    exclude: ""
+
+  loggers:
+    - enabled: true
+      file-name: "console.log"
+      format: "[{date} {time}] /{full_command}"
