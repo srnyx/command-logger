@@ -13,7 +13,7 @@ description = "Log commands executed by players and console to one file or multi
 galaxy {
     minecraft {
         paper("1.8.8")
-        annoyingAPI("45ae893")
+        annoyingAPI("47cd350")
 
         dependency {
             optional {

@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 import xyz.srnyx.annoyingapi.file.okaeri.AnnoyingConfig;
 import xyz.srnyx.annoyingapi.file.okaeri.RootConfig;
 import xyz.srnyx.annoyingapi.file.okaeri.SubConfig;
+import xyz.srnyx.annoyingapi.stats.Stat;
 
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
@@ -35,6 +36,7 @@ public class ConfigYml extends RootConfig {
     @Comment
     @Comment
     @Comment("Toggle all logging features (basically the entire plugin)")
+    @Stat
     public boolean enabled = true;
 
     @Comment
@@ -61,6 +63,7 @@ public class ConfigYml extends RootConfig {
     @Comment("  - File for ALL commands")
     @Comment("  - Separate file for each day")
     @Comment("  - File for only /op commands")
+    @Stat(sizeOnly = true)
     @NotNull public List<ConfigLogger> loggers = List.of(
             new ConfigLogger(this,
                     true, "all.log",
@@ -168,8 +171,10 @@ public class ConfigYml extends RootConfig {
                 super(defaultsParent);
             }
 
+            @Stat
             @NotNull public SimpleDateFormat file_names = new SimpleDateFormat("yyyy-MM-dd");
 
+            @Stat
             @NotNull public SimpleDateFormat formats = new SimpleDateFormat("MM-dd-yyyy");
         }
 
@@ -179,8 +184,10 @@ public class ConfigYml extends RootConfig {
                 super(defaultsParent);
             }
 
+            @Stat
             @NotNull public SimpleDateFormat file_names = new SimpleDateFormat("HH-mm-ss");
 
+            @Stat
             @NotNull public SimpleDateFormat formats = new SimpleDateFormat("HH:mm:ss");
         }
     }
@@ -242,6 +249,7 @@ public class ConfigYml extends RootConfig {
         }
 
         @Comment("Toggle all player command loggers")
+        @Stat
         public boolean enabled = true;
 
         @Comment
@@ -256,6 +264,7 @@ public class ConfigYml extends RootConfig {
         @Comment("  - Separate file for each player UUID")
         @Comment("  - Separate file for each player UUID for each day excluding /login")
         @Comment("  - File for all players with group.mod permission")
+        @Stat(sizeOnly = true)
         @NotNull public List<PlayerLogger> loggers = List.of(
                 new PlayerLogger(getRoot(),
                         true,
@@ -303,6 +312,7 @@ public class ConfigYml extends RootConfig {
         }
 
         @Comment("Toggle all console command loggers")
+        @Stat
         public boolean enabled = true;
 
         @Comment
@@ -316,6 +326,7 @@ public class ConfigYml extends RootConfig {
         @Comment("  - File for ALL console commands")
         @Comment("  - Separate file for each day")
         @Comment("  - File excluding /save-all")
+        @Stat(sizeOnly = true)
         @NotNull public List<ConfigLogger> loggers = List.of(
                 new ConfigLogger(getRoot(),
                         true,
